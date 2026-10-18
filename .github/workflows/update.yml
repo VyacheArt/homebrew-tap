@@ -48,15 +48,16 @@ jobs:
           name: casks
           path: Casks
 
-      # fetch checks the DMGs of both architectures against the cask; install
-      # quarantines the app as for users, and Gatekeeper must accept it. The
-      # casks share the app, so each is uninstalled before the next.
+      # style takes the casks alone: on the whole tap it would also hold
+      # update.sh to Homebrew's shell rules. fetch checks the DMGs of both
+      # architectures, the app installs quarantined as for users and must pass
+      # Gatekeeper, and the casks share it, so each is uninstalled first.
       - name: Check
         run: |
-          brew style vyacheart/tap
           for file in Casks/*.rb; do
             [ -e "$file" ] || continue
             cask="vyacheart/tap/$(basename "$file" .rb)"
+            brew style "$file"
             brew audit --cask --strict "$cask"
             brew fetch --cask --arch=all "$cask"
             brew install --cask "$cask"

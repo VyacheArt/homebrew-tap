@@ -79,7 +79,6 @@ cask "$token" do
     "~/Library/Caches/velopack/pro.web-artisan",
     "~/Library/Logs/velopack_pro.web-artisan.log",
     "~/Library/Preferences/pro.web-artisan.plist",
-    "~/Library/Saved Application State/pro.web-artisan.savedState",
   ]
 end
 EOF
