@@ -1,0 +1,93 @@
+name: Update
+
+# The app's release workflow runs this after each release: the casks are
+# committed once brew installs the new DMG. Pushes and pull requests only
+# check.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+
+# Runs queue, and each checks out the branch tip, so a queued run commits on
+# top of the previous one.
+concurrency: update
+
+permissions:
+  contents: read
+
+jobs:
+  casks:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Update
+        run: ./update.sh
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: casks
+          path: Casks/
+
+  check:
+    needs: casks
+    # Also runs when casks is skipped
+    if: ${{ !failure() && !cancelled() }}
+    runs-on: macos-latest
+    steps:
+      # Checks the tap out in place of actions/checkout and trusts it
+      - uses: Homebrew/actions/setup-homebrew@main
+
+      - uses: actions/download-artifact@v8
+        if: needs.casks.result == 'success'
+        with:
+          name: casks
+          path: Casks
+
+      # fetch checks the DMGs of both architectures against the cask; install
+      # quarantines the app as for users, and Gatekeeper must accept it. The
+      # casks share the app, so each is uninstalled before the next.
+      - name: Check
+        run: |
+          brew style vyacheart/tap
+          for file in Casks/*.rb; do
+            [ -e "$file" ] || continue
+            cask="vyacheart/tap/$(basename "$file" .rb)"
+            brew audit --cask --strict "$cask"
+            brew fetch --cask --arch=all "$cask"
+            brew install --cask "$cask"
+            spctl --assess --type execute --verbose=2 "/Applications/Web Artisan Pro.app"
+            brew uninstall --cask --zap "$cask"
+          done
+
+  commit:
+    needs: check
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref }}
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: casks
+          path: Casks
+
+      # A new cask is untracked, so the index is compared, not the tree
+      - name: Commit
+        run: |
+          git add Casks
+          git diff --cached --quiet && exit 0
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m "$(git diff --cached --name-only | while read -r file; do
+            echo "$(basename "$file" .rb) $(sed -n 's/^  version "\(.*\)"$/\1/p' "$file")"
+          done | paste -sd, - | sed 's/,/, /g')"
+          git push
