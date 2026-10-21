@@ -1,9 +1,9 @@
 cask "web-artisan-pro@beta" do
   arch arm: "arm64", intel: "x64"
 
-  version "2.0.0-beta.9"
-  sha256 arm:   "ebe55915ba69acb2ed9c6debb6bf9c03a61ac87706ad82d454af0cc9911fb421",
-         intel: "ba2e7526b37ab2b12ecaa3b41ea9506d1b7bc65f3c4cd53817bb548afe33a4ce"
+  version "2.0.0-beta.10"
+  sha256 arm:   "643a12245a6613ceafac5bfd2cece392f8f45c27f071b23f76206de0062985b9",
+         intel: "fe071cae80f6ab41f9f70b83a57a1afa94cf0b7e29b0481f955b8c254a92cdcf"
 
   url "https://cdn.web-artisan.pro/releases/#{version}/web-artisan-pro-#{version}-macos-#{arch}.dmg"
   name "Web Artisan Pro"
