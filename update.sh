@@ -55,6 +55,8 @@ for channel in stable beta; do
     exit 1
   fi
 
+  # From 2.0.0-beta.11 the app needs macOS 13: the Go 1.27 inside runs from
+  # Ventura on. A bare symbol is a minimum; Homebrew deprecated ">= :ventura".
   cat > "Casks/$token.rb" <<EOF
 cask "$token" do
   arch arm: "arm64", intel: "x64"
@@ -70,7 +72,7 @@ cask "$token" do
 
   auto_updates true
   conflicts_with cask: "$other"
-  depends_on :macos
+  depends_on macos: :ventura
 
   app "Web Artisan Pro.app"
 
